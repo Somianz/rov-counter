@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROV Hero Counter Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   RESET & ROOT
+════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg0:#04080f;--bg1:#080e1a;--bg2:#0d1424;--bg3:#131d32;--bg4:#1a2540;
+  --txt:#dce4f5;--txt2:#7a8db0;--txt3:#3d5070;
+  --gold:#f0b429;--gold2:#d4930a;
+  --blue:#4f6ef7;--blue2:#3a54e0;--blue-glow:rgba(79,110,247,.35);
+  --green:#00e87a;--green2:#00b85e;--green-glow:rgba(0,232,122,.3);
+  --red:#f04060;--red2:#c0283c;--red-glow:rgba(240,64,96,.3);
+  --purple:#9b5de5;--cyan:#00d4ff;
+  --bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.12);
+  --r8:8px;--r12:12px;--r16:16px;--r24:24px;
+  --shadow-sm:0 2px 8px rgba(0,0,0,.4);
+  --shadow-md:0 4px 20px rgba(0,0,0,.5);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.65);
+}
+
+body{
+font-family:'Kanit',sans-serif;
+background:var(--bg0);color:var(--txt);
+min-height:100vh;overflow-x:hidden;
+}
+
+/* animated bg mesh */
+body::before{
+content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+background:
+radial-gradient(ellipse 80% 60% at 10% 20%,rgba(79,110,247,.12) 0%,transparent 60%),
+radial-gradient(ellipse 60% 80% at 90% 80%,rgba(0,232,122,.08) 0%,transparent 60%),
+radial-gradient(ellipse 50% 40% at 50% 50%,rgba(155,93,229,.05) 0%,transparent 70%);
+animation:meshMove 12s ease-in-out infinite alternate;
+}
+@keyframes meshMove{
+from{background-position:0% 0%,100% 100%,50% 50%}
+to{background-position:5% 8%,95% 92%,52% 48%}
+}
+
+/* scanline texture */
+body::after{
+content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+opacity:.5;
+}
+
+img{display:block;width:100%;height:100%;object-fit:cover}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--blue2)}
+
+/* ── active/press effects for ALL interactive elements ── */
+button:active,
+.hero-card:active,
+.picker-item:active,
+.lib-item:active,
+.role-btn:active{
+transform:scale(.94)!important;
+filter:brightness(.85);
+transition:transform .08s,filter .08s!important;
+}
+#fab:active{transform:scale(.9) rotate(45deg)!important}
+#lockBtn:active{transform:scale(.88)!important}
+
+/* ════════════════════════════════════════
+LAYOUT
+════════════════════════════════════════ */
+.wrap{max-width:1440px;margin:0 auto;padding:24px 20px;position:relative;z-index:1}
+
+/* ════════════════════════════════════════
+HEADER
+════════════════════════════════════════ */
+.hdr{text-align:center;padding:36px 20px 20px;margin-bottom:28px;position:relative}
+.hdr-eyebrow{
+font-family:'Rajdhani',sans-serif;letter-spacing:.25em;font-size:.72rem;
+color:var(--gold);text-transform:uppercase;margin-bottom:10px;
+display:flex;align-items:center;justify-content:center;gap:12px;
+}
+.hdr-eyebrow::before,.hdr-eyebrow::after{
+content:'';flex:1;max-width:80px;height:1px;
+background:linear-gradient(90deg,transparent,var(--gold));
+}
+.hdr-eyebrow::after{background:linear-gradient(90deg,var(--gold),transparent)}
+.hdr h1{
+font-family:'Rajdhani',sans-serif;
+font-size:clamp(2rem,5vw,3.2rem);font-weight:700;letter-spacing:.04em;
+background:linear-gradient(135deg,#fff 0%,var(--gold) 40%,var(--blue) 100%);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+line-height:1.1;margin-bottom:10px;
+}
+.hdr-sub{color:var(--txt2);font-size:.9rem;letter-spacing:.02em}
+
+/* ── LOCK BTN ── */
+#lockBtn{
+position:fixed;top:20px;right:20px;
+width:44px;height:44px;
+background:linear-gradient(135deg,var(--bg3),var(--bg2));
+border:1.5px solid var(--bdr2);border-radius:50%;
+display:flex;align-items:center;justify-content:center;
+cursor:pointer;z-index:9999;font-size:1.2rem;
+box-shadow:var(--shadow-md);
+transition:all .2s;
+}
+#lockBtn:hover{border-color:var(--blue);box-shadow:0 0 20px var(--blue-glow);transform:scale(1.08)}
+#lockBtn.open{border-color:var(--green);box-shadow:0 0 20px var(--green-glow)}
+
+/* ════════════════════════════════════════
+ROLE FILTER - แก้ไขสีให้อ่านง่าย
+════════════════════════════════════════ */
+.roles{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:28px}
+.role-btn{
+padding:9px 18px;
+background:linear-gradient(135deg,var(--bg3),var(--bg2));
+border:1.5px solid var(--bdr);border-radius:var(--r8);
+color:var(--txt);font-family:'Rajdhani',sans-serif;
+font-size:.9rem;font-weight:600;letter-spacing:.05em;
+cursor:pointer;transition:all .2s;position:relative;overflow:hidden;
+}
+.role-btn::before{
+content:'';position:absolute;inset:0;
+background:linear-gradient(135deg,var(--blue),var(--purple));
+opacity:0;transition:opacity .2s;
+}
+.role-btn:hover{border-color:var(--blue);color:#fff;transform:translateY(-2px);box-shadow:0 4px 16px var(--blue-glow)}
+.role-btn:hover::before{opacity:.15}
+.role-btn.on{
+background:linear-gradient(135deg,var(--blue),var(--blue2));
+border-color:var(--blue);color:#fff;
+box-shadow:0 0 20px var(--blue-glow),0 4px 12px rgba(0,0,0,.3);
+transform:translateY(-2px);
+}
+.role-btn span{position:relative;z-index:1}
+
+/* ════════════════════════════════════════
+HERO GRID
+════════════════════════════════════════ */
+.hero-grid{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:16px;margin-bottom:32px;
+animation:fadeUp .5s ease both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.hero-card{
+aspect-ratio:3/4;
+background:var(--bg2);
+border-radius:var(--r12);overflow:hidden;
+cursor:pointer;position:relative;
+border:1.5px solid var(--bdr);
+transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,border-color .25s;
+box-shadow:var(--shadow-sm);
+}
+.hero-card::before{
+content:'';position:absolute;inset:0;z-index:1;
+background:linear-gradient(to top,rgba(0,0,0,.92) 0%,rgba(0,0,0,.3) 45%,transparent 100%);
+pointer-events:none;
+}
+.hero-card:hover{
+transform:translateY(-8px) scale(1.03);
+box-shadow:0 12px 36px rgba(0,0,0,.5),0 0 0 1.5px var(--gold);
+border-color:var(--gold);z-index:5;
+}
+.hero-card-img{width:100%;height:100%;position:absolute;inset:0}
+.hero-card-img img{width:100%;height:100%;object-fit:cover;object-position:center top}
+.hero-card-placeholder{
+width:100%;height:100%;position:absolute;inset:0;
+display:flex;align-items:center;justify-content:center;
+font-size:3.5rem;background:var(--bg3);
+}
+.hero-card-name{
+position:absolute;bottom:0;left:0;right:0;z-index:2;
+padding:20px 10px 10px;
+text-align:center;font-family:'Rajdhani',sans-serif;
+font-size:.9rem;font-weight:700;letter-spacing:.04em;color:#fff;
+text-shadow:0 2px 6px rgba(0,0,0,.95);
+}
+.hero-card-badge{
+position:absolute;top:8px;right:8px;z-index:2;
+background:linear-gradient(135deg,var(--gold),var(--gold2));
+color:#000;font-size:.65rem;font-weight:700;
+padding:3px 8px;border-radius:10px;letter-spacing:.05em;
+font-family:'Rajdhani',sans-serif;
+box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.hero-card-role{
+position:absolute;top:8px;left:8px;z-index:2;
+background:rgba(0,0,0,.85);backdrop-filter:blur(8px);
+font-size:.62rem;font-weight:600;padding:3px 8px;
+border-radius:5px;border:1px solid var(--bdr2);
+color:var(--gold);font-family:'Rajdhani',sans-serif;letter-spacing:.05em;
+}
+.no-hero{
+text-align:center;padding:80px 20px;color:var(--txt3);
+animation:fadeUp .5s ease;
+}
+.no-hero .ico{font-size:5rem;opacity:.25;margin-bottom:18px;display:block}
+.no-hero p{font-size:.95rem;line-height:1.8}
+
+/* ════════════════════════════════════════
+MODAL BASE
+════════════════════════════════════════ */
+.modal-bg{
+position:fixed;inset:0;
+background:rgba(0,0,0,.88);backdrop-filter:blur(12px);
+display:none;align-items:center;justify-content:center;
+padding:16px;
+}
+.modal-bg.show{display:flex}
+#detailModal{z-index:2100}
+#editModal{z-index:2200}
+#libModal{z-index:2300}
+#lockOverlay,#cfmOverlay{z-index:2400}
+
+.modal-box{
+background:linear-gradient(160deg,var(--bg2) 0%,var(--bg1) 100%);
+border-radius:var(--r16);
+border:1px solid var(--bdr2);
+box-shadow:var(--shadow-lg),0 0 0 1px rgba(255,255,255,.03);
+width:100%;
+animation:modalIn .3s cubic-bezier(.34,1.36,.64,1) both;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(24px)}to{opacity:1;transform:none}}
+.modal-hdr{
+padding:20px 24px;
+background:linear-gradient(135deg,var(--bg3) 0%,var(--bg2) 100%);
+border-bottom:1px solid var(--bdr);
+border-radius:var(--r16) var(--r16) 0 0;
+display:flex;align-items:center;gap:12px;
+}
+.modal-hdr h2{font-size:1.2rem;font-weight:700;flex:1;font-family:'Rajdhani',sans-serif;letter-spacing:.04em}
+.modal-close{
+width:34px;height:34px;flex-shrink:0;
+background:rgba(255,255,255,.06);border:1px solid var(--bdr);
+border-radius:50%;color:var(--txt2);font-size:1.2rem;
+cursor:pointer;display:flex;align-items:center;justify-content:center;
+transition:all .2s;line-height:1;
+}
+.modal-close:hover{background:var(--red);border-color:var(--red);color:#fff;transform:rotate(90deg)!important;filter:none!important}
+.modal-body{padding:22px 24px;overflow-y:auto;scroll-behavior:smooth}
+.modal-body::-webkit-scrollbar{width:6px}
+.modal-body::-webkit-scrollbar-track{background:var(--bg2)}
+.modal-body::-webkit-scrollbar-thumb{background:var(--blue);border-radius:3px}
+.modal-body::-webkit-scrollbar-thumb:hover{background:var(--blue2)}
+.modal-ftr{
+padding:14px 24px;
+background:rgba(0,0,0,.2);
+border-top:1px solid var(--bdr);
+border-radius:0 0 var(--r16) var(--r16);
+display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;
+}
+
+/* ════════════════════════════════════════
+DETAIL MODAL
+════════════════════════════════════════ */
+#detailModal .modal-box{max-width:820px;max-height:90vh;display:flex;flex-direction:column}
+.detail-hero-row{display:flex;gap:22px;align-items:flex-start}
+.detail-img{
+width:120px;height:150px;flex-shrink:0;
+border-radius:var(--r12);overflow:hidden;
+border:2px solid var(--blue);
+box-shadow:0 0 28px var(--blue-glow),var(--shadow-md);
+position:relative;
+}
+.detail-img img{width:100%;height:100%;object-fit:cover;object-position:center top}
+.detail-info{flex:1;min-width:0}
+.detail-info h2{
+font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;
+letter-spacing:.04em;line-height:1;margin-bottom:10px;
+background:linear-gradient(135deg,#fff 0%,var(--gold) 60%);
+-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.detail-tags{display:flex;gap:7px;flex-wrap:wrap}
+.tag{
+padding:5px 12px;
+background:linear-gradient(135deg,var(--bg3),var(--bg4));
+border-radius:20px;font-size:.78rem;color:var(--txt2);
+border:1px solid var(--bdr2);
+font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.05em;
+}
+.detail-section{margin-top:20px}
+.detail-section h3{
+font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;
+color:var(--gold);margin-bottom:12px;letter-spacing:.08em;
+text-transform:uppercase;display:flex;align-items:center;gap:8px;
+}
+.detail-section h3::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.4}
+.c-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+.c-card{
+background:var(--bg3);border-radius:var(--r12);overflow:hidden;
+border:1px solid var(--bdr);
+transition:transform .2s,border-color .2s;
+}
+.c-card:hover{transform:scale(1.06);border-color:var(--gold)}
+.c-card-img{aspect-ratio:1;background:var(--bg2);overflow:hidden;position:relative}
+.c-card-img img{width:100%;height:100%;object-fit:cover;object-position:center}
+.c-card-name{
+padding:6px 4px;text-align:center;
+font-size:.72rem;font-weight:600;color:var(--txt);
+font-family:'Rajdhani',sans-serif;letter-spacing:.03em;
+}
+.notes-box{
+background:var(--bg3);border-radius:var(--r12);padding:16px;
+border:1px solid var(--bdr);color:var(--txt2);
+line-height:1.8;white-space:pre-wrap;font-size:.88rem;
+}
+
+/* ════════════════════════════════════════
+EDIT MODAL
+════════════════════════════════════════ */
+#editModal .modal-box{max-width:680px;max-height:92vh;display:flex;flex-direction:column}
+.edit-thumb{
+width:42px;height:42px;border-radius:10px;overflow:hidden;
+border:2px solid var(--blue);flex-shrink:0;
+box-shadow:0 0 12px var(--blue-glow);
+}
+.form-lbl{
+font-size:.82rem;font-weight:600;margin-bottom:8px;display:block;
+color:var(--gold);font-family:'Rajdhani',sans-serif;
+letter-spacing:.06em;text-transform:uppercase;
+}
+.form-grp{margin-bottom:20px}
+.form-ta{
+width:100%;min-height:100px;padding:12px;
+background:var(--bg3);border:1.5px solid var(--bdr);
+border-radius:var(--r12);color:var(--txt);
+font-family:'Kanit',sans-serif;font-size:.9rem;resize:vertical;
+transition:border-color .2s;
+}
+.form-ta:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,110,247,.15)}
+.form-ta::placeholder{color:var(--txt3)}
+
+/* ── COUNTER PICKER ── */
+.picker-wrap{
+background:var(--bg3);
+border:1.5px solid var(--bdr);border-radius:var(--r12);
+overflow:hidden;
+}
+.picker-search-inp{
+width:100%;padding:11px 14px;
+background:var(--bg2);border:none;border-bottom:1.5px solid var(--bdr);
+color:var(--txt);font-family:'Kanit',sans-serif;font-size:.88rem;
+transition:background .2s;
+}
+.picker-search-inp:focus{outline:none;background:var(--bg1);border-bottom-color:var(--blue)}
+.picker-search-inp::placeholder{color:var(--txt3)}
+.picker-grid{
+display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+gap:8px;padding:12px;max-height:260px;overflow-y:auto;
+scroll-behavior:smooth;
+}
+.picker-grid::-webkit-scrollbar{width:6px}
+.picker-grid::-webkit-scrollbar-track{background:var(--bg2)}
+.picker-grid::-webkit-scrollbar-thumb{background:var(--blue);border-radius:3px}
+.picker-grid::-webkit-scrollbar-thumb:hover{background:var(--blue2)}
+.picker-item{
+aspect-ratio:3/4;
+background:var(--bg2);border-radius:var(--r8);
+overflow:hidden;cursor:pointer;position:relative;
+border:2px solid transparent;
+transition:border-color .15s,box-shadow .15s,transform .15s;
+user-select:none;
+min-height:100px;
+}
+/* ── hover state ── */
+.picker-item:hover{
+border-color:rgba(79,110,247,.6)!important;
+transform:scale(1.06)!important;
+z-index:2;
+}
+/* ── SELECTED state ── bright green glow + overlay ── */
+.picker-item.picked{
+border-color:var(--green)!important;
+box-shadow:0 0 0 2px var(--green),0 0 16px var(--green-glow)!important;
+}
+.picker-item.picked .picker-item-img::after{
+content:'';position:absolute;inset:0;
+background:rgba(0,232,122,.18);
+pointer-events:none;
+}
+/* ── checkmark badge ── */
+.picker-item.picked .picker-ck{display:flex}
+.picker-ck{
+display:none;
+position:absolute;bottom:22px;right:3px;z-index:3;
+width:18px;height:18px;
+background:var(--green);border-radius:50%;
+align-items:center;justify-content:center;
+font-size:.65rem;color:#000;font-weight:900;
+box-shadow:0 2px 6px rgba(0,0,0,.4);
+pointer-events:none;
+}
+.picker-item-img{width:100%;height:calc(100% - 22px);position:relative;overflow:hidden;background:var(--bg3)}
+.picker-item-img img{width:100%;height:100%;object-fit:cover;object-position:center}
+.picker-item-ph{
+width:100%;height:100%;display:flex;align-items:center;
+justify-content:center;font-size:1.6rem;background:var(--bg3);
+color:var(--txt3);
+}
+.picker-item-name{
+font-size:.64rem;font-weight:700;text-align:center;
+padding:3px 2px;color:#fff;
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+font-family:'Rajdhani',sans-serif;letter-spacing:.03em;
+position:relative;z-index:1;
+background:rgba(0,0,0,.7);
+}
+.picker-empty{
+padding:28px;text-align:center;color:var(--txt3);
+font-size:.85rem;grid-column:1/-1;
+}
+
+/* ── PICKED TAGS ── */
+.picked-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;min-height:20px}
+.picked-tag{
+padding:5px 11px;
+background:rgba(0,232,122,.08);
+border:1.5px solid var(--green);border-radius:20px;
+font-size:.78rem;color:var(--green);
+display:inline-flex;align-items:center;gap:6px;
+animation:tagIn .2s ease;
+}
+@keyframes tagIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.picked-tag img{width:20px;height:20px;border-radius:4px;flex-shrink:0;object-fit:cover}
+.picked-tag-rm{
+cursor:pointer;color:rgba(0,232,122,.45);
+font-size:1.1rem;line-height:1;padding:0 2px;
+border:none;background:none;font-family:inherit;
+transition:color .15s;
+}
+.picked-tag-rm:hover{color:var(--red)!important;transform:none!important;filter:none!important}
+.picked-empty{color:var(--txt3);font-size:.82rem;padding:2px 0}
+
+/* ════════════════════════════════════════
+LIBRARY MODAL
+════════════════════════════════════════ */
+#libModal .modal-box{max-width:1080px;max-height:90vh;display:flex;flex-direction:column}
+.lib-tabs{
+display:flex;background:var(--bg2);
+border-bottom:2px solid var(--bdr);flex-shrink:0;
+}
+.lib-tab{
+padding:13px 22px;background:transparent;border:none;
+color:var(--txt);font-family:'Rajdhani',sans-serif;
+font-weight:700;cursor:pointer;
+border-bottom:3px solid transparent;margin-bottom:-2px;
+transition:all .2s;font-size:.9rem;letter-spacing:.05em;
+}
+.lib-tab:hover{color:var(--blue)}
+.lib-tab.on{color:var(--blue);border-bottom-color:var(--blue)}
+.lib-body{flex:1;overflow-y:auto;padding:18px 22px;scroll-behavior:smooth}
+.lib-body::-webkit-scrollbar{width:6px}
+.lib-body::-webkit-scrollbar-track{background:var(--bg2)}
+.lib-body::-webkit-scrollbar-thumb{background:var(--blue);border-radius:3px}
+.lib-body::-webkit-scrollbar-thumb:hover{background:var(--blue2)}
+.lib-search{
+width:100%;padding:10px 14px;
+background:var(--bg3);border:1.5px solid var(--bdr);
+border-radius:var(--r8);color:var(--txt);
+font-family:'Kanit',sans-serif;font-size:.88rem;margin-bottom:14px;
+transition:border-color .2s;
+}
+.lib-search:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,110,247,.15)}
+.lib-search::placeholder{color:var(--txt3)}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+
+/* ── lib-item: same logic as picker-item ── */
+.lib-item{
+aspect-ratio:3/4;background:var(--bg3);border-radius:var(--r8);
+overflow:hidden;position:relative;
+border:2px solid var(--bdr);
+transition:border-color .15s,box-shadow .15s,transform .18s;
+cursor:pointer;
+min-height:110px;
+}
+.lib-item:hover{border-color:rgba(79,110,247,.5)!important;transform:scale(1.05)!important}
+/* ── SELECTED: กรอบเขียว + glow + overlay ── */
+.lib-item.lib-selected{
+border-color:var(--green)!important;
+box-shadow:0 0 0 2px var(--green),0 0 18px var(--green-glow)!important;
+}
+.lib-item.lib-selected .lib-item-inner::after{
+content:'';position:absolute;inset:0;
+background:rgba(0,232,122,.15);pointer-events:none;
+}
+.lib-item.lib-selected .lib-ck{display:flex}
+.lib-ck{
+display:none;
+position:absolute;bottom:23px;right:4px;z-index:3;
+width:18px;height:18px;
+background:var(--green);border-radius:50%;
+align-items:center;justify-content:center;
+font-size:.65rem;color:#000;font-weight:900;
+pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.lib-item-inner{width:100%;height:calc(100% - 24px);position:relative;overflow:hidden;background:var(--bg3)}
+.lib-item-inner img{width:100%;height:100%;object-fit:cover;object-position:center}
+.lib-item-ph{
+width:100%;height:100%;display:flex;
+align-items:center;justify-content:center;font-size:2rem;
+color:var(--txt3);background:var(--bg3);
+}
+.lib-item-name{
+font-size:.7rem;font-weight:700;text-align:center;
+padding:4px 3px;color:#fff;
+white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+font-family:'Rajdhani',sans-serif;letter-spacing:.03em;
+position:relative;z-index:1;
+background:rgba(0,0,0,.75);
+}
+.lib-item-del{
+position:absolute;top:4px;right:4px;z-index:4;
+width:22px;height:22px;
+background:var(--red);border:none;border-radius:50%;
+color:#fff;font-size:.85rem;cursor:pointer;
+display:none;align-items:center;justify-content:center;
+box-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1;padding:0;
+}
+.lib-item:hover .lib-item-del{display:flex}
+.read-mode .lib-item-del{display:none!important}
+
+/* quick add form */
+.qadd-form{
+background:linear-gradient(135deg,var(--bg3),var(--bg2));
+border-radius:var(--r12);padding:20px;
+border:1.5px dashed var(--bdr2);
+}
+.qadd-title{
+font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;
+color:var(--blue);margin-bottom:14px;letter-spacing:.05em;
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.f-inp,.f-sel{
+width:100%;padding:9px 12px;
+background:var(--bg2);border:1.5px solid var(--bdr);
+border-radius:var(--r8);color:var(--txt);
+font-family:'Kanit',sans-serif;font-size:.85rem;
+transition:border-color .2s;
+}
+.f-inp:focus,.f-sel:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(79,110,247,.15)}
+.f-inp::placeholder{color:var(--txt3)}
+.f-sel option{background:var(--bg2)}
+.upload-zone{
+border:2px dashed var(--bdr2);border-radius:var(--r8);
+padding:18px;text-align:center;cursor:pointer;
+transition:all .2s;display:flex;align-items:center;
+justify-content:center;min-height:62px;margin-bottom:10px;
+color:var(--txt2);font-size:.85rem;
+}
+.upload-zone:hover{border-color:var(--blue);background:rgba(79,110,247,.06);color:var(--blue)}
+.upload-zone.has-img{padding:4px}
+.upload-preview{width:100%;max-height:130px;object-fit:contain;border-radius:var(--r8)}
+.btn-qadd{
+width:100%;padding:11px;
+background:linear-gradient(135deg,var(--blue),var(--blue2));
+color:#fff;border:none;border-radius:var(--r8);
+font-family:'Rajdhani',sans-serif;font-weight:700;
+cursor:pointer;transition:all .2s;font-size:.95rem;
+letter-spacing:.05em;box-shadow:0 4px 12px var(--blue-glow);
+}
+.btn-qadd:hover{transform:translateY(-2px);box-shadow:0 6px 18px var(--blue-glow)}
+
+/* ════════════════════════════════════════
+BUTTONS - แก้ไขให้มีความชัดเจนมากขึ้น
+════════════════════════════════════════ */
+.btn{
+padding:9px 20px;border-radius:var(--r8);
+font-family:'Rajdhani',sans-serif;font-weight:700;
+cursor:pointer;transition:all .2s;font-size:.9rem;
+display:inline-flex;align-items:center;gap:7px;border:none;
+letter-spacing:.05em;position:relative;overflow:hidden;
+}
+.btn::after{
+content:'';position:absolute;inset:0;
+background:rgba(255,255,255,0);transition:background .15s;
+}
+.btn:hover::after{background:rgba(255,255,255,.08)}
+
+.btn-ghost{
+background:rgba(255,255,255,.05);border:1.5px solid var(--bdr2);color:var(--txt);
+}
+.btn-ghost:hover{border-color:var(--txt);color:#fff;background:rgba(255,255,255,.1)}
+.btn-primary{
+background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;
+box-shadow:0 3px 10px var(--blue-glow);
+}
+.btn-primary:hover{box-shadow:0 5px 18px var(--blue-glow);transform:translateY(-1px)}
+.btn-success{
+background:linear-gradient(135deg,var(--green),var(--green2));color:#000;
+box-shadow:0 3px 10px var(--green-glow);font-weight:800;
+}
+.btn-success:hover{box-shadow:0 5px 18px var(--green-glow);transform:translateY(-1px)}
+.btn-danger{
+background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;
+box-shadow:0 3px 10px var(--red-glow);
+}
+.btn-danger:hover{box-shadow:0 5px 18px var(--red-glow);transform:translateY(-1px)}
+
+/* ════════════════════════════════════════
+FAB - แก้ไขให้เห็นปุ่มชัดเจน
+════════════════════════════════════════ */
+#fab{
+position:fixed;bottom:28px;right:28px;
+width:58px;height:58px;z-index:999;
+background:linear-gradient(135deg,var(--blue),var(--purple));
+border-radius:50%;display:flex;align-items:center;justify-content:center;
+cursor:pointer;font-size:2rem;color:#fff;
+box-shadow:0 4px 20px rgba(79,110,247,.55),0 8px 32px rgba(0,0,0,.3);
+transition:all .3s cubic-bezier(.34,1.56,.64,1);
+border:2px solid rgba(255,255,255,.15);
+font-weight:300;
+line-height:1;
+}
+#fab:hover{transform:scale(1.12) rotate(90deg);box-shadow:0 6px 28px rgba(79,110,247,.7)}
+.read-mode #fab{display:none}
+.read-mode .admin-only{display:none!important}
+
+/* ════════════════════════════════════════
+LOCK / CONFIRM OVERLAYS - แก้ไขสีให้อ่านชัดเจน
+════════════════════════════════════════ */
+#lockOverlay,#cfmOverlay{
+position:fixed;inset:0;
+background:rgba(0,0,0,.9);backdrop-filter:blur(12px);
+display:none;align-items:center;justify-content:center;
+padding:20px;
+}
+#lockOverlay.show,#cfmOverlay.show{display:flex}
+#lockOverlay.show ~ #lockBtn{display:none}
+.lock-box,.cfm-box{
+background:linear-gradient(160deg,var(--bg3),var(--bg2));
+border-radius:var(--r16);padding:38px 32px;max-width:380px;width:100%;
+border:1px solid var(--bdr2);box-shadow:var(--shadow-lg);text-align:center;
+animation:modalIn .3s ease;
+}
+.lock-ico,.cfm-ico-wrap{font-size:3rem;margin-bottom:14px;display:block}
+.lock-box h3,.cfm-box h3{
+font-family:'Rajdhani',sans-serif;font-size:1.4rem;font-weight:700;
+margin-bottom:8px;letter-spacing:.04em;color:var(--txt);
+}
+.lock-box p{color:var(--txt2);font-size:.88rem;margin-bottom:18px;line-height:1.6}
+.cfm-msg{color:var(--txt2);font-size:.9rem;margin-bottom:22px;line-height:1.6}
+.pw-inp{
+width:100%;padding:13px;
+background:var(--bg3);border:1.5px solid var(--bdr2);
+border-radius:var(--r8);color:var(--txt);
+font-size:1rem;text-align:center;letter-spacing:4px;
+margin-bottom:16px;font-family:'Kanit',sans-serif;
+transition:border-color .2s;
+}
+.pw-inp:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(79,110,247,.2)}
+.lock-btns,.cfm-btns{display:flex;gap:10px;justify-content:center}
+
+/* ════════════════════════════════════════
+SYNC BAR
+════════════════════════════════════════ */
+#syncBar{
+display:none;align-items:center;gap:8px;justify-content:center;
+margin-bottom:14px;padding:9px 16px;
+background:rgba(240,64,96,.08);border:1px solid rgba(240,64,96,.2);
+border-radius:var(--r8);font-size:.82rem;color:var(--txt2);
+}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sync-dot.ok{background:var(--green)}
+.sync-dot.err{background:var(--red)}
+.sync-dot.loading{background:var(--blue);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* ════════════════════════════════════════
+TOAST
+════════════════════════════════════════ */
+.toast{
+position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+background:linear-gradient(135deg,var(--bg3),var(--bg2));
+color:var(--txt);padding:12px 20px;
+border-radius:var(--r12);
+box-shadow:var(--shadow-lg);border:1px solid var(--bdr2);
+z-index:9999;display:flex;align-items:center;gap:10px;
+animation:toastIn .3s cubic-bezier(.34,1.5,.64,1);
+white-space:nowrap;font-size:.88rem;font-weight:500;
+pointer-events:none;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(16px) scale(.9)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+.toast.ok{border-left:3px solid var(--green)}
+.toast.err{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--blue)}
+
+/* ซ่อนปุ่มล็อกและ FAB เมื่อเปิด modal */
+.modal-bg.show ~ #lockBtn,
+.modal-bg.show ~ #fab{
+pointer-events:none;
+opacity:0.2;
+}
+
+/* ════════════════════════════════════════
+RESPONSIVE
+════════════════════════════════════════ */
+@media(max-width:1100px){.hero-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:820px){
+.hero-grid{grid-template-columns:repeat(3,1fr)}
+.detail-hero-row{flex-direction:column}
+.picker-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+.lib-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
+}
+@media(max-width:540px){
+.hero-grid{grid-template-columns:repeat(2,1fr)}
+.hdr h1{font-size:1.8rem}
+.form-row{grid-template-columns:1fr}
+.modal-body{padding:16px}
+.modal-hdr{padding:16px 18px}
+.roles{gap:6px}
+.role-btn{padding:7px 14px;font-size:.85rem}
+.picker-grid{grid-template-columns:repeat(auto-fill,minmax(65px,1fr))}
+.c-grid{grid-template-columns:repeat(auto-fill,minmax(75px,1fr))}
+}
+</style>
+
+</head>
+<body>
+
+<button id="lockBtn" onclick="toggleLock()">🔒</button>
+
+<div id="fab" onclick="openAddHero()">+</div>
+
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-eyebrow"><span>Realm of Valor</span></div>
+    <h1>⚔ Hero Counter Guide</h1>
+    <p class="hdr-sub">เลือกฮีโร่เพื่อดูข้อมูลเคาน์เตอร์และกลยุทธ์การต่อสู้</p>
+  </div>
+
+  <div id="syncBar">
+    <div class="sync-dot err" id="syncDot"></div>
+    <span id="syncText">เชื่อมต่อ Firebase ไม่ได้</span>
+  </div>
+  <div id="setupBanner" style="display:none"></div>
+
+  <div class="roles">
+    <button class="role-btn on" data-r="all"      onclick="setRole('all')"><span>🎯 ทั้งหมด</span></button>
+    <button class="role-btn" data-r="Tank"         onclick="setRole('Tank')"><span>🛡️ Tank</span></button>
+    <button class="role-btn" data-r="Fighter"      onclick="setRole('Fighter')"><span>⚔️ Fighter</span></button>
+    <button class="role-btn" data-r="Assassin"     onclick="setRole('Assassin')"><span>🗡️ Assassin</span></button>
+    <button class="role-btn" data-r="Mage"         onclick="setRole('Mage')"><span>🔮 Mage</span></button>
+    <button class="role-btn" data-r="Carry"        onclick="setRole('Carry')"><span>🏹 Carry</span></button>
+    <button class="role-btn" data-r="Support"      onclick="setRole('Support')"><span>💚 Support</span></button>
+  </div>
+  <div class="hero-grid" id="heroGrid"></div>
+  <div class="no-hero" id="noHero" style="display:none">
+    <span class="ico">🎮</span>
+    <p>ยังไม่มีฮีโร่ในหมวดนี้<br>กดปุ่ม <strong>+</strong> มุมล่างขวาเพื่อเพิ่มฮีโร่</p>
+  </div>
+</div>
+
+<!-- ════ DETAIL MODAL ════ -->
+
+<div class="modal-bg" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h2 id="dtTitle">—</h2>
+      <button class="modal-close" onclick="closeModal('detailModal')">×</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto">
+      <div class="detail-hero-row">
+        <div class="detail-img" id="dtImg"></div>
+        <div class="detail-info">
+          <h2 id="dtName"></h2>
+          <div class="detail-tags" id="dtTags"></div>
+        </div>
+      </div>
+      <div class="detail-section" id="dtCounterSec" style="display:none">
+        <h3>🎯 ฮีโร่แก้ทาง</h3>
+        <div class="c-grid" id="dtCounterGrid"></div>
+      </div>
+      <div class="detail-section" id="dtNotesSec" style="display:none">
+        <h3>📝 กลยุทธ์</h3>
+        <div class="notes-box" id="dtNotesBox"></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <span></span>
+      <div class="admin-only" style="display:flex;gap:10px">
+        <button class="btn btn-primary" onclick="openEditModal()">✏️ แก้ไข</button>
+        <button class="btn btn-danger"  onclick="doDeleteCounter()">🗑️ ลบ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ EDIT MODAL ════ -->
+
+<div class="modal-bg" id="editModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="edit-thumb" id="editThumb">
+        <div style="background:var(--bg3);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">⚔️</div>
+      </div>
+      <h2 id="editTitle">แก้ไขฮีโร่</h2>
+      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <div class="modal-body" style="flex:1;overflow-y:auto">
+      <div class="form-grp">
+        <label class="form-lbl">🎯 เลือกฮีโร่แก้ทาง — กดเพื่อเลือก / กดซ้ำเพื่อยกเลิก</label>
+        <div class="picker-wrap">
+          <input class="picker-search-inp" id="pickerSearch" placeholder="🔍 ค้นหาฮีโร่..." autocomplete="off">
+          <div class="picker-grid" id="pickerGrid"></div>
+        </div>
+        <div class="picked-list" id="pickedList"></div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">📝 หมายเหตุ / กลยุทธ์</label>
+        <textarea class="form-ta" id="editNotes" placeholder="บันทึกข้อมูลเพิ่มเติม เช่น สกิลที่ต้องระวัง..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="saveEdit()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ LIBRARY MODAL ════ -->
+
+<div class="modal-bg" id="libModal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h2>📚 คลังฮีโร่</h2>
+      <button class="modal-close" onclick="closeModal('libModal')">×</button>
+    </div>
+    <div class="lib-tabs">
+      <button class="lib-tab on" id="libTabSel" onclick="switchLibTab('sel')">🎯 เพิ่มฮีโร่เข้าระบบ</button>
+      <button class="lib-tab"    id="libTabAdd" onclick="switchLibTab('add')">➕ เพิ่มฮีโร่ใหม่เข้าคลัง</button>
+    </div>
+    <div class="lib-body">
+      <div id="libSelPane">
+        <input class="lib-search" id="libSearch" placeholder="🔍 ค้นหาฮีโร่..." autocomplete="off">
+        <div class="lib-grid" id="libGrid"></div>
+      </div>
+      <div id="libAddPane" style="display:none">
+        <div class="qadd-form">
+          <div class="qadd-title">➕ เพิ่มฮีโร่ใหม่เข้าคลัง</div>
+          <div class="form-row">
+            <input type="text" class="f-inp" id="qName" placeholder="ชื่อฮีโร่ *">
+            <select class="f-sel" id="qRole">
+              <option value="">-- ประเภท --</option>
+              <option>Tank</option>
+              <option>Fighter</option>
+              <option>Assassin</option>
+              <option>Mage</option>
+              <option>Carry</option>
+              <option>Support</option>
+            </select>
+          </div>
+          <input type="file" id="qFile" accept="image/*" style="display:none">
+          <label for="qFile" class="upload-zone" id="qUpload">
+            <span>📁 คลิกเพื่ออัพโหลดรูปภาพ</span>
+          </label>
+          <input type="url" class="f-inp" id="qUrl" placeholder="หรือวาง URL รูปภาพ" style="margin-bottom:10px">
+          <button class="btn-qadd" onclick="addHeroToLib()">💾 เพิ่มเข้าคลัง</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <span style="color:var(--txt);font-size:.85rem;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.04em" id="libSelCount">เลือกแล้ว 0 ฮีโร่</span>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="closeModal('libModal')">ยกเลิก</button>
+        <button class="btn btn-success" onclick="confirmLibSel()">✓ เพิ่มเข้าระบบ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOCK ── -->
+
+<div id="lockOverlay">
+  <div class="lock-box">
+    <span class="lock-ico">🔐</span>
+    <h3>ป้อนรหัสผ่าน</h3>
+    <p>กรุณาใส่รหัสเพื่อเข้าสู่โหมด Admin</p>
+    <input type="password" class="pw-inp" id="pwInp" placeholder="••••••">
+    <div class="lock-btns">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeLock()">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:1" onclick="checkPw()">🔓 ปลดล็อก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM ── -->
+
+<div id="cfmOverlay">
+  <div class="cfm-box">
+    <span class="cfm-ico-wrap" id="cfmIco">⚠️</span>
+    <div class="cfm-msg" id="cfmMsg">ยืนยัน?</div>
+    <div class="cfm-btns">
+      <button class="btn btn-ghost" onclick="closeCfm(false)">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="closeCfm(true)">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ Firebase SDK ════════════════════ -->
+
+<script type="module">
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, onSnapshot, writeBatch }
+                           from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+let LIB    = [];
+let CTRS   = [];
+let role   = 'all';
+let viewId = null;
+let editId = null;
+let picked = [];   // IDs ที่เลือกใน counter picker
+let libSel = [];   // IDs ที่เลือกใน library modal
+let pendImg= '';
+let cfmCb  = null;
+let locked = true;
+let fbApp  = null;
+let db     = null;
+let useFirebase = false;
+let unsubLib  = null;
+let unsubCtrs = null;
+const PW = '090344';
+
+/* ════════════════════════════════════════
+   FIREBASE CONFIG
+════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDupvulALaqs2Pe1oiF6-9M451f0hT5vws",
+  authDomain: "rov-counter-guide.firebaseapp.com",
+  projectId: "rov-counter-guide",
+  storageBucket: "rov-counter-guide.firebasestorage.app",
+  messagingSenderId: "462634926139",
+  appId: "1:462634926139:web:3e9f63d252183295621c1e",
+  measurementId: "G-FMZ2V0DVE0"
+};
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+async function init(){
+  await connectFirebase(FIREBASE_CONFIG);
+  updateLockUI();
+
+  document.getElementById('pwInp').addEventListener('keypress', e=>{ if(e.key==='Enter') checkPw(); });
+  document.getElementById('pickerSearch').addEventListener('input', renderPicker);
+  document.getElementById('libSearch').addEventListener('input', renderLibGrid);
+
+  document.getElementById('qFile').addEventListener('change', e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const rd=new FileReader();
+    rd.onload=ev=>{
+      pendImg=ev.target.result;
+      const z=document.getElementById('qUpload');
+      z.classList.add('has-img');
+      z.innerHTML=`<img src="${ev.target.result}" class="upload-preview" alt="preview">`;
+    };
+    rd.readAsDataURL(f);
+  });
+
+  ['detailModal','editModal','libModal'].forEach(id=>{
+    document.getElementById(id).addEventListener('mousedown', function(e){
+      if(e.target===this) closeModal(id);
+    });
+  });
+}
+
+/* ════════════════════════════════════════
+   FIREBASE
+════════════════════════════════════════ */
+async function connectFirebase(cfg){
+  try{
+    if(!fbApp) fbApp=initializeApp(cfg);
+    db=getFirestore(fbApp);
+    useFirebase=true;
+    hideSyncBar();
+    subscribeRealtime();
+  }catch(e){
+    console.warn('Firebase error:',e);
+    showSyncError('Firebase เชื่อมต่อไม่ได้ — ใช้ข้อมูลในเครื่อง');
+    fallbackToLocal();
+  }
+}
+
+function subscribeRealtime(){
+  if(unsubLib)  unsubLib();
+  if(unsubCtrs) unsubCtrs();
+  unsubLib = onSnapshot(collection(db,'heroLibrary'), snap=>{
+    LIB=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderGrid();
+    if(document.getElementById('libModal').classList.contains('show')) renderLibGrid();
+    if(document.getElementById('editModal').classList.contains('show')) renderPicker();
+  });
+  unsubCtrs = onSnapshot(collection(db,'heroCounters'), snap=>{
+    CTRS=snap.docs.map(d=>({heroId:d.id,...d.data()}));
+    renderGrid();
+  });
+}
+
+function fallbackToLocal(){
+  useFirebase=false;
+  try{ LIB  = JSON.parse(localStorage.getItem('rovLib') ||'[]') }catch{LIB=[]}
+  try{ CTRS = JSON.parse(localStorage.getItem('rovCtrs')||'[]') }catch{CTRS=[]}
+  renderGrid();
+}
+
+function showSyncError(msg){
+  const bar=document.getElementById('syncBar');
+  document.getElementById('syncText').textContent=msg;
+  bar.style.display='flex';
+}
+function hideSyncBar(){
+  document.getElementById('syncBar').style.display='none';
+}
+
+/* ════════════════════════════════════════
+   SAVE / DELETE HELPERS
+════════════════════════════════════════ */
+async function saveLib(hero){
+  if(useFirebase&&db){
+    const {id,...data}=hero;
+    await setDoc(doc(db,'heroLibrary',id),data);
+  } else {
+    const i=LIB.findIndex(h=>h.id===hero.id);
+    if(i<0) LIB.push(hero); else LIB[i]=hero;
+    localStorage.setItem('rovLib',JSON.stringify(LIB));
+    renderGrid(); renderLibGrid();
+  }
+}
+
+async function saveCtr(ctr){
+  if(useFirebase&&db){
+    const {heroId,...data}=ctr;
+    await setDoc(doc(db,'heroCounters',heroId),data);
+  } else {
+    let c=CTRS.find(x=>x.heroId===ctr.heroId);
+    if(!c){ CTRS.push(ctr); } else Object.assign(c,ctr);
+    localStorage.setItem('rovCtrs',JSON.stringify(CTRS));
+    renderGrid();
+  }
+}
+
+async function deleteLibHero(id){
+  if(useFirebase&&db){
+    const batch=writeBatch(db);
+    batch.delete(doc(db,'heroLibrary',id));
+    const snap=await getDocs(collection(db,'heroCounters'));
+    snap.docs.forEach(d=>{
+      if(d.id===id){ batch.delete(doc(db,'heroCounters',id)); }
+      else {
+        const arr=(d.data().counters||[]).filter(x=>x!==id);
+        if(arr.length!==(d.data().counters||[]).length)
+          batch.update(doc(db,'heroCounters',d.id),{counters:arr});
+      }
+    });
+    await batch.commit();
+  } else {
+    LIB=LIB.filter(h=>h.id!==id);
+    CTRS=CTRS.filter(c=>c.heroId!==id);
+    CTRS.forEach(c=>{ c.counters=(c.counters||[]).filter(x=>x!==id); });
+    localStorage.setItem('rovLib',JSON.stringify(LIB));
+    localStorage.setItem('rovCtrs',JSON.stringify(CTRS));
+    renderGrid(); renderLibGrid();
+  }
+}
+
+async function deleteCtr(heroId){
+  if(useFirebase&&db){
+    await deleteDoc(doc(db,'heroCounters',heroId));
+  } else {
+    CTRS=CTRS.filter(c=>c.heroId!==heroId);
+    localStorage.setItem('rovCtrs',JSON.stringify(CTRS));
+    renderGrid();
+  }
+}
+
+/* ════════════════════════════════════════
+   LOCK
+════════════════════════════════════════ */
+function updateLockUI(){
+  const btn=document.getElementById('lockBtn');
+  if(locked){
+    btn.textContent='🔒'; btn.classList.remove('open');
+    document.body.classList.add('read-mode');
+  } else {
+    btn.textContent='🔓'; btn.classList.add('open');
+    document.body.classList.remove('read-mode');
+  }
+}
+window.toggleLock=()=>{
+  if(locked) openLock();
+  else confirm2('🔒','ล็อกระบบหรือไม่?',()=>{ locked=true; updateLockUI(); toast('ล็อกระบบแล้ว','ok'); });
+};
+function openLock(){
+  const i=document.getElementById('pwInp');
+  i.value=''; i.style.borderColor=''; i.placeholder='••••••';
+  document.getElementById('lockOverlay').classList.add('show');
+  setTimeout(()=>i.focus(),80);
+}
+window.closeLock=()=>document.getElementById('lockOverlay').classList.remove('show');
+window.checkPw=()=>{
+  const i=document.getElementById('pwInp');
+  if(i.value===PW){
+    locked=false; updateLockUI(); closeLock(); toast('ปลดล็อกสำเร็จ 🔓','ok');
+  } else {
+    i.style.borderColor='var(--red)';
+    i.value=''; i.placeholder='รหัสผ่านไม่ถูกต้อง ❌';
+    setTimeout(()=>{ i.style.borderColor=''; i.placeholder='••••••'; },1500);
+  }
+};
+
+/* ════════════════════════════════════════
+   CONFIRM
+════════════════════════════════════════ */
+function confirm2(ico,msg,cb){
+  document.getElementById('cfmIco').textContent=ico;
+  document.getElementById('cfmMsg').textContent=msg;
+  cfmCb=cb;
+  document.getElementById('cfmOverlay').classList.add('show');
+}
+window.closeCfm=yes=>{
+  document.getElementById('cfmOverlay').classList.remove('show');
+  if(yes&&typeof cfmCb==='function') cfmCb();
+  cfmCb=null;
+};
+
+/* ════════════════════════════════════════
+   MODAL HELPERS
+════════════════════════════════════════ */
+function openModal(id){ document.getElementById(id).classList.add('show'); }
+window.closeModal=id=>document.getElementById(id).classList.remove('show');
+
+/* ════════════════════════════════════════
+   HERO GRID
+════════════════════════════════════════ */
+window.setRole=r=>{
+  role=r;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('on',b.dataset.r===r));
+  renderGrid();
+};
+
+function renderGrid(){
+  const grid=document.getElementById('heroGrid');
+  const none=document.getElementById('noHero');
+  let list=LIB.filter(h=>CTRS.some(c=>c.heroId===h.id));
+  if(role!=='all') list=list.filter(h=>h.role===role);
+  if(!list.length){ grid.style.display='none'; none.style.display='block'; return; }
+  grid.style.display='grid'; none.style.display='none';
+  grid.innerHTML='';
+  list.forEach((h,i)=>{
+    const cd=CTRS.find(c=>c.heroId===h.id);
+    const cnt=cd&&cd.counters?cd.counters.length:0;
+    const el=document.createElement('div');
+    el.className='hero-card';
+    el.style.animationDelay=`${i*0.04}s`;
+    el.innerHTML=`
+      ${h.image
+        ? `<div class="hero-card-img"><img src="${h.image}" alt="${esc(h.name)}" loading="lazy"></div>`
+        : `<div class="hero-card-placeholder">❓</div>`}
+      ${h.role?`<div class="hero-card-role">${esc(h.role)}</div>`:''}
+      ${cnt>0?`<div class="hero-card-badge">${cnt} CTR</div>`:''}
+      <div class="hero-card-name">${esc(h.name)}</div>`;
+    el.onclick=()=>openDetail(h.id);
+    grid.appendChild(el);
+  });
+}
+
+/* ════════════════════════════════════════
+   DETAIL MODAL
+════════════════════════════════════════ */
+function openDetail(id){
+  if(!id){ toast('ไม่พบข้อมูลฮีโร่','err'); return; }
+  viewId=id;
+  const h=LIB.find(x=>x.id===id); 
+  if(!h){ toast('ไม่พบฮีโร่ในคลัง','err'); return; }
+  const cd=CTRS.find(c=>c.heroId===id);
+
+  document.getElementById('dtTitle').textContent=h.name||'—';
+  document.getElementById('dtName').textContent=h.name||'ไม่ระบุชื่อ';
+  document.getElementById('dtImg').innerHTML=h.image
+    ?`<img src="${h.image}" alt="${esc(h.name)}">`
+    :`<div style="width:100%;height:100%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:3.5rem;color:var(--txt3)">❓</div>`;
+
+  const tags=document.getElementById('dtTags'); tags.innerHTML='';
+  if(h.role) tags.innerHTML+=`<div class="tag">📍 ${esc(h.role)}</div>`;
+  if(h.lane) tags.innerHTML+=`<div class="tag">🛣️ ${esc(h.lane)}</div>`;
+
+  const cs=document.getElementById('dtCounterSec');
+  if(cd&&cd.counters&&cd.counters.length){
+    cs.style.display='block';
+    document.getElementById('dtCounterGrid').innerHTML=cd.counters.map(cid=>{
+      const ch=LIB.find(x=>x.id===cid); if(!ch) return '';
+      return `<div class="c-card"><div class="c-card-img">${ch.image?`<img src="${ch.image}" alt="${esc(ch.name)}">`:`<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--txt3)">❓</div>`}</div><div class="c-card-name">${esc(ch.name)}</div></div>`;
+    }).join('');
+  } else { cs.style.display='none'; }
+
+  const ns=document.getElementById('dtNotesSec');
+  if(cd&&cd.notes&&cd.notes.trim()){ ns.style.display='block'; document.getElementById('dtNotesBox').textContent=cd.notes; }
+  else { ns.style.display='none'; }
+
+  openModal('detailModal');
+}
+
+/* ════════════════════════════════════════
+   EDIT MODAL
+════════════════════════════════════════ */
+window.openEditModal=()=>{
+  if(locked){ toast('กรุณาปลดล็อกก่อน','err'); return; }
+  if(!viewId){ toast('ไม่พบข้อมูลฮีโร่','err'); return; }
+  editId=viewId;
+  const h=LIB.find(x=>x.id===editId);
+  if(!h){ toast('ไม่พบฮีโร่ในคลัง','err'); return; }
+  const cd=CTRS.find(c=>c.heroId===editId);
+
+  picked=cd&&cd.counters?[...cd.counters]:[];
+  document.getElementById('editNotes').value=cd&&cd.notes?cd.notes:'';
+
+  const th=document.getElementById('editThumb');
+  th.innerHTML=h.image
+    ?`<img src="${h.image}" alt="">`
+    :`<div style="background:var(--bg3);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--txt3)">⚔️</div>`;
+  document.getElementById('editTitle').textContent=`แก้ไข: ${h.name||'ฮีโร่'}`;
+  document.getElementById('pickerSearch').value='';
+
+  renderPicker();
+  renderPickedList();
+  closeModal('detailModal');
+  openModal('editModal');
+};
+
+/* ── renderPicker: สร้าง DOM ใหม่ทั้งหมด ไม่มี double-click bug ── */
+function renderPicker(){
+  const term=document.getElementById('pickerSearch').value.trim().toLowerCase();
+  const grid=document.getElementById('pickerGrid');
+  const list=LIB.filter(h=>h.id!==editId&&(!term||h.name.toLowerCase().includes(term)));
+
+  if(!list.length){
+    grid.innerHTML=`<div class="picker-empty">ไม่พบฮีโร่ที่ค้นหา</div>`;
+    return;
+  }
+
+  grid.innerHTML='';
+  list.forEach(h=>{
+    const isPicked=picked.includes(h.id);
+    const el=document.createElement('div');
+    el.className='picker-item'+(isPicked?' picked':'');
+    el.dataset.hid=h.id;
+    el.title=h.name;
+    el.innerHTML=`
+      <div class="picker-item-img">
+        ${h.image
+          ?`<img src="${h.image}" alt="${esc(h.name)}" loading="lazy">`
+          :`<div class="picker-item-ph">❓</div>`}
+      </div>
+      <div class="picker-item-name">${esc(h.name)}</div>
+      <div class="picker-ck">✓</div>`;
+
+    /* ── FIX double-click: ใช้ mousedown แทน click เพื่อ immediate response ── */
+    el.addEventListener('mousedown', e=>{
+      e.preventDefault(); // ป้องกัน focus ทำให้ input blur แล้ว re-render
+      const idx=picked.indexOf(h.id);
+      if(idx>-1){
+        picked.splice(idx,1);
+        el.classList.remove('picked');
+      } else {
+        picked.push(h.id);
+        el.classList.add('picked');
+      }
+      renderPickedList();
+    });
+    /* mobile: touchend */
+    el.addEventListener('touchend', e=>{
+      e.preventDefault();
+      const idx=picked.indexOf(h.id);
+      if(idx>-1){ picked.splice(idx,1); el.classList.remove('picked'); }
+      else { picked.push(h.id); el.classList.add('picked'); }
+      renderPickedList();
+    });
+
+    grid.appendChild(el);
+  });
+}
+
+function renderPickedList(){
+  const wrap=document.getElementById('pickedList');
+  if(!picked.length){
+    wrap.innerHTML='<span class="picked-empty">ยังไม่ได้เลือกฮีโร่เคาน์เตอร์</span>';
+    return;
+  }
+  wrap.innerHTML=picked.map(hid=>{
+    const h=LIB.find(x=>x.id===hid); if(!h) return '';
+    return `<span class="picked-tag" data-ptid="${hid}">
+      ${h.image?`<img src="${h.image}" alt="${esc(h.name)}">`:''}
+      ${esc(h.name)}
+      <button class="picked-tag-rm" data-rm="${hid}">×</button>
+    </span>`;
+  }).join('');
+
+  wrap.querySelectorAll('[data-rm]').forEach(btn=>{
+    btn.addEventListener('mousedown', e=>{
+      e.stopPropagation();
+      const hid=btn.dataset.rm;
+      picked=picked.filter(x=>x!==hid);
+      const pi=document.querySelector(`.picker-item[data-hid="${hid}"]`);
+      if(pi) pi.classList.remove('picked');
+      renderPickedList();
+    });
+  });
+}
+
+window.saveEdit=async()=>{
+  if(!editId){ toast('เกิดข้อผิดพลาด','err'); return; }
+  const notesVal=document.getElementById('editNotes').value.trim();
+  const ctr={heroId:editId,counters:[...picked],notes:notesVal};
+  
+  // แสดง loading indicator
+  const saveBtn=document.querySelector('.modal-ftr .btn-success');
+  const origText=saveBtn.innerHTML;
+  saveBtn.innerHTML='⏳ กำลังบันทึก...';
+  saveBtn.disabled=true;
+  saveBtn.style.opacity='0.6';
+  
+  try{
+    await saveCtr(ctr);
+    closeModal('editModal');
+    toast('บันทึกสำเร็จ ✅','ok');
+    viewId=editId;
+    openDetail(editId);
+  }catch(e){ 
+    toast('บันทึกไม่สำเร็จ: '+e.message,'err'); 
+    saveBtn.innerHTML=origText;
+    saveBtn.disabled=false;
+    saveBtn.style.opacity='1';
+  }
+};
+
+/* ════════════════════════════════════════
+   DELETE COUNTER
+════════════════════════════════════════ */
+window.doDeleteCounter=()=>{
+  if(locked){ toast('กรุณาปลดล็อกก่อน','err'); return; }
+  const h=LIB.find(x=>x.id===viewId);
+  if(!h){ toast('ไม่พบข้อมูลฮีโร่','err'); return; }
+  confirm2('🗑️',`ลบข้อมูลเคาน์เตอร์ของ "${h.name}"?`,async()=>{
+    try{ 
+      await deleteCtr(viewId); 
+      closeModal('detailModal'); 
+      viewId=null; 
+      toast('ลบสำเร็จ','ok'); 
+    }
+    catch(e){ 
+      console.error('Delete error:',e);
+      toast('ลบไม่สำเร็จ: '+e.message,'err'); 
+    }
+  });
+};
+
+/* ════════════════════════════════════════
+   LIBRARY MODAL
+════════════════════════════════════════ */
+window.openAddHero=()=>{
+  if(locked){ toast('กรุณาปลดล็อกก่อน','err'); return; }
+  libSel=[];
+  document.getElementById('libSearch').value='';
+  renderLibGrid();
+  switchLibTab('sel');
+  openModal('libModal');
+};
+
+window.switchLibTab=t=>{
+  document.getElementById('libTabSel').classList.toggle('on',t==='sel');
+  document.getElementById('libTabAdd').classList.toggle('on',t==='add');
+  document.getElementById('libSelPane').style.display=t==='sel'?'block':'none';
+  document.getElementById('libAddPane').style.display=t==='add'?'block':'none';
+};
+
+/* ── renderLibGrid: ใช้ mousedown เพื่อ fix double-click bug ── */
+function renderLibGrid(){
+  const term=document.getElementById('libSearch').value.trim().toLowerCase();
+  const grid=document.getElementById('libGrid');
+  const list=LIB.filter(h=>!term||h.name.toLowerCase().includes(term));
+  grid.innerHTML='';
+
+  if(!list.length){
+    grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--txt3);font-size:.88rem">ไม่พบฮีโร่ในคลัง<br>กด "เพิ่มฮีโร่ใหม่เข้าคลัง" เพื่อเพิ่ม</div>`;
+    document.getElementById('libSelCount').textContent=`เลือกแล้ว ${libSel.length} ฮีโร่`;
+    return;
+  }
+
+  list.forEach(h=>{
+    const isSel=libSel.includes(h.id);
+    const el=document.createElement('div');
+    el.className='lib-item'+(isSel?' lib-selected':'');
+    el.dataset.hid=h.id;
+    el.innerHTML=`
+      <div class="lib-item-inner">
+        ${h.image
+          ?`<img src="${h.image}" alt="${esc(h.name)}" loading="lazy">`
+          :`<div class="lib-item-ph">❓</div>`}
+      </div>
+      <div class="lib-item-name">${esc(h.name)}</div>
+      <div class="lib-ck">✓</div>
+      ${!locked?`<button class="lib-item-del">×</button>`:''}`;
+
+    /* ── FIX: mousedown immediate response, ไม่รอ click ── */
+    el.addEventListener('mousedown', e=>{
+      if(e.target.classList.contains('lib-item-del')) return; // ปล่อยให้ปุ่มลบจัดการ
+      e.preventDefault();
+      const idx=libSel.indexOf(h.id);
+      if(idx>-1){ libSel.splice(idx,1); el.classList.remove('lib-selected'); }
+      else       { libSel.push(h.id);   el.classList.add('lib-selected'); }
+      document.getElementById('libSelCount').textContent=`เลือกแล้ว ${libSel.length} ฮีโร่`;
+    });
+    el.addEventListener('touchend', e=>{
+      if(e.target.classList.contains('lib-item-del')) return;
+      e.preventDefault();
+      const idx=libSel.indexOf(h.id);
+      if(idx>-1){ libSel.splice(idx,1); el.classList.remove('lib-selected'); }
+      else       { libSel.push(h.id);   el.classList.add('lib-selected'); }
+      document.getElementById('libSelCount').textContent=`เลือกแล้ว ${libSel.length} ฮีโร่`;
+    });
+
+    /* delete button */
+    const delBtn=el.querySelector('.lib-item-del');
+    if(delBtn){
+      delBtn.addEventListener('mousedown', e=>{ e.stopPropagation(); e.preventDefault(); });
+      delBtn.addEventListener('click', e=>{ e.stopPropagation(); doDelFromLib(h.id); });
+    }
+
+    grid.appendChild(el);
+  });
+  document.getElementById('libSelCount').textContent=`เลือกแล้ว ${libSel.length} ฮีโร่`;
+}
+
+window.confirmLibSel=async()=>{
+  if(!libSel.length){ toast('กรุณาเลือกฮีโร่อย่างน้อย 1 ตัว','err'); return; }
+  
+  // แสดง loading
+  const confirmBtn=document.querySelector('#libModal .modal-ftr .btn-success');
+  const origText=confirmBtn.innerHTML;
+  confirmBtn.innerHTML='⏳ กำลังเพิ่ม...';
+  confirmBtn.disabled=true;
+  confirmBtn.style.opacity='0.6';
+  
+  let added=0;
+  try{
+    for(const hid of libSel){
+      if(!CTRS.find(c=>c.heroId===hid)){
+        await saveCtr({heroId:hid,counters:[],notes:''});
+        added++;
+      }
+    }
+    closeModal('libModal');
+    renderGrid();
+
+    if(libSel.length===1){
+      viewId=libSel[0]; editId=libSel[0];
+      const h=LIB.find(x=>x.id===editId);
+      const cd=CTRS.find(c=>c.heroId===editId);
+      picked=cd&&cd.counters?[...cd.counters]:[];
+      document.getElementById('editNotes').value=cd&&cd.notes?cd.notes:'';
+      const th=document.getElementById('editThumb');
+      th.innerHTML=h&&h.image
+        ?`<img src="${h.image}" alt="">`
+        :`<div style="background:var(--bg3);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">⚔️</div>`;
+      document.getElementById('editTitle').textContent=h?`แก้ไข: ${h.name}`:'แก้ไขฮีโร่';
+      document.getElementById('pickerSearch').value='';
+      renderPicker(); renderPickedList();
+      openModal('editModal');
+    }
+    toast(added?`เพิ่ม ${added} ฮีโร่เข้าระบบแล้ว`:'ฮีโร่ที่เลือกมีในระบบแล้ว','ok');
+  }catch(e){
+    toast('เกิดข้อผิดพลาด: '+e.message,'err');
+    confirmBtn.innerHTML=origText;
+    confirmBtn.disabled=false;
+    confirmBtn.style.opacity='1';
+  }
+};
+
+function doDelFromLib(hid){
+  if(locked){ toast('กรุณาปลดล็อกก่อน','err'); return; }
+  const h=LIB.find(x=>x.id===hid);
+  if(!h){ toast('ไม่พบฮีโร่ที่ต้องการลบ','err'); return; }
+  confirm2('🗑️',`ลบ "${h.name}" ออกจากคลัง?\n\nข้อมูลเคาน์เตอร์ทั้งหมดที่เกี่ยวข้องจะถูกลบด้วย`,async()=>{
+    try{
+      await deleteLibHero(hid);
+      libSel=libSel.filter(x=>x!==hid);
+      picked=picked.filter(x=>x!==hid);
+      if(!useFirebase){ renderLibGrid(); renderGrid(); }
+      if(document.getElementById('editModal').classList.contains('show')){ renderPicker(); renderPickedList(); }
+      toast('ลบฮีโร่ออกจากคลังแล้ว','ok');
+    }catch(e){ 
+      console.error('Delete hero error:',e);
+      toast('ลบไม่สำเร็จ: '+e.message,'err'); 
+    }
+  });
+}
+
+window.addHeroToLib=async()=>{
+  const name=document.getElementById('qName').value.trim();
+  if(!name){ toast('กรุณากรอกชื่อฮีโร่','err'); return; }
+  if(LIB.some(h=>h.name.toLowerCase()===name.toLowerCase())){ toast('ฮีโร่ชื่อนี้มีในคลังแล้ว','err'); return; }
+  
+  const url=document.getElementById('qUrl').value.trim();
+  const hero={ id:Date.now().toString(), name, image:pendImg||url||'', role:document.getElementById('qRole').value, lane:'' };
+  
+  // แสดง loading
+  const addBtn=document.querySelector('.btn-qadd');
+  const origText=addBtn.innerHTML;
+  addBtn.innerHTML='⏳ กำลังเพิ่ม...';
+  addBtn.disabled=true;
+  addBtn.style.opacity='0.6';
+  
+  try{
+    await saveLib(hero);
+    document.getElementById('qName').value='';
+    document.getElementById('qRole').value='';
+    document.getElementById('qUrl').value='';
+    document.getElementById('qFile').value='';
+    pendImg='';
+    const z=document.getElementById('qUpload');
+    z.classList.remove('has-img'); z.innerHTML='<span>📁 คลิกเพื่ออัพโหลดรูปภาพ</span>';
+    if(!useFirebase) renderLibGrid();
+    if(document.getElementById('editModal').classList.contains('show')) renderPicker();
+    toast(`เพิ่ม "${name}" เข้าคลังสำเร็จ`,'ok');
+    addBtn.innerHTML=origText;
+    addBtn.disabled=false;
+    addBtn.style.opacity='1';
+  }catch(e){ 
+    toast('เพิ่มไม่สำเร็จ: '+e.message,'err'); 
+    addBtn.innerHTML=origText;
+    addBtn.disabled=false;
+    addBtn.style.opacity='1';
+  }
+};
+
+/* ════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════ */
+function toast(msg,type='ok'){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  const ico=type==='ok'?'✅':type==='info'?'ℹ️':'❌';
+  t.innerHTML=`<span>${ico}</span><span>${esc(msg)}</span>`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+function esc(s){
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+
+</body>
+</html>
